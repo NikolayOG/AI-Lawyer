@@ -1,0 +1,4 @@
+.idea/
+__pycache__/
+crawl-300d-2M.vec
+venv/*

@@ -1,75 +1,127 @@
-from flask import Flask
 from flask import jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, request
-from flask_pymongo import PyMongo, ObjectId
-from flask import make_response
+import spacy
+from dateparser import parse
+from nltk import word_tokenize, ngrams
+import nltk
+import string
+from nltk.stem import WordNetLemmatizer
+from gensim.models import KeyedVectors
+wordnet_lemmatizer = WordNetLemmatizer()
+
 
 app = Flask(__name__)
-app.config['MONGO_DBNAME'] = 'reports' # name of database on mongo
-app.config["MONGO_URI"] = "mongodb://127.0.0.1:27017/glh"
+spacy_nlp = spacy.load('en')
 
-mongo = PyMongo(app)
+# topics
+DISABILITY = 'DISABILITY'
+ILLNESS = 'ILLNESS'
+DEATH = 'DEATH'
+CHILDREN = 'CHILDREN'
 
-
-questions = {
-    'q1': 'How old are you'
+# seed words
+REASONS = {
+    'disability': DISABILITY,
+    'disabled': DISABILITY,
+    'illness': ILLNESS,
+    'stroke': ILLNESS,
+    'heart': ILLNESS,
+    'disease': ILLNESS,
+    'ill': ILLNESS,
+    'injury': ILLNESS,
+    'die': DEATH,
+    'death' : DEATH,
+    'deceased' : DEATH,
+    'kid': CHILDREN,
+    'youngster': CHILDREN,
+    'children': CHILDREN
 }
 
-# @app.route('/')
-# def hello_world():
-#     print(mongo.db)
-#
-#     user_id = mongo.db.claimants.insert_one({'name': 'david'}).inserted_id
-#
-#     print(user_id)
-#
-#
-#     return 'Hello World'
+print('Loading model...')
+model = KeyedVectors.load_word2vec_format('./crawl-300d-2M.vec')
+print('Model loaded.')
 
 
-@app.route('/create_user', methods=['POST'])
-def create_user():
-    content = request.json
+def clean_text(text):
+    fix_text = ''
+    for c in text.strip().lower():
+        if c in ['?', '.', ","]:
+            fix_text += ' ' + c + ' '
+        elif c in string.ascii_letters or c in list(map(str, list(range(10)))):
+            fix_text += c
+        else:
+            fix_text += ' '
 
-    name = content['name']
-
-    user_id = mongo.db.claimants.insert_one({'name': name}).inserted_i
-
-
-    return jsonify(
-        user_id=str(user_id)
-    )
-
-
-@app.route('/get_question/<string:user_id>', methods=['POST'])
-def get_question(user_id):
-    content = request.json
-
-    print('heeeeeree', mongo.db.claimants.find_one({"_id": ObjectId(str(user_id))}))
-
-    # name = content['name']
-
-    return jsonify(
-        {
-            'q1': 'How old are you?'
-        }
-    )
+    return fix_text
 
 
-@app.route('/answer_question/<string:user_id>', methods=['POST'])
-def answer_question(user_id):
-    content = request.json
+@app.route('/reasons', methods=['POST'])
+def extract_reasons():
+    global model
 
-    question_id = content['question_id']
-    answer = content['answer']
+    try:
+        content = request.json
+        text_reasons = content['text_reasons']
 
-    mongo.db.claimants.find_one_and_update(
-        {"_id": ObjectId(str(user_id))},
-        {"$set": {question_id: answer}}
-    )
+        word_tokens = word_tokenize(clean_text(text_reasons))
 
-    return '200'
+        word_stemmed = [str(wordnet_lemmatizer.lemmatize(w)) for w in word_tokens]
+
+        reason = None
+        reasonslist = []
+
+        for w in word_stemmed:
+            for r in REASONS:
+                if model.similarity(w, r) > 0.35:
+                    reasonslist.append(REASONS[r])
+                    reason = True
+
+                    # print('Reason', reasonslist[r])
+        if reason:
+            return jsonify({"status": str(1), "reasons": reasonslist})
+        else:
+            return jsonify({"status": str(-1)})
+
+
+
+    except Exception as e:
+        return e
+
+
+@app.route('/address', methods=['POST'])
+def parse_address():
+    try:
+        content = request.json
+        text_date = content['text_date']
+
+        if 'text_date' not in content:
+            return jsonify({"status": str(-1)})
+
+        document = spacy_nlp(text_date)
+
+        date = None
+
+        for element in document.ents:
+            if str(element.label_) == 'DATE':
+                date = str(element)
+
+        # sometimes it fixes the date extraction
+        if not date:
+            text_date = 'a ' + text_date
+
+            document = spacy_nlp(text_date)
+
+            for element in document.ents:
+                if str(element.label_) == 'DATE':
+                    date = str(element)
+
+        if date:
+            return jsonify({"status": str(1), "date": str(parse(str(date)))})
+        else:
+            return jsonify({"status": str(-1)})
+
+    except Exception as e:
+        return e
 
 
 if __name__ == '__main__':
