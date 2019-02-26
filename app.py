@@ -22,27 +22,31 @@ ILLNESS = 'ILLNESS'
 DEATH = 'DEATH'
 CHILDREN = 'CHILDREN'
 
-# seed words
+# seed words for the word2vec model
 REASONS = {
     'disability': DISABILITY,
+    'deaf': DISABILITY,
     'disabled': DISABILITY,
     'illness': ILLNESS,
     'stroke': ILLNESS,
     'heart': ILLNESS,
     'disease': ILLNESS,
     'ill': ILLNESS,
+    'depression': ILLNESS,
+    'depress': ILLNESS,
     'injury': ILLNESS,
     'die': DEATH,
     'death' : DEATH,
     'deceased' : DEATH,
     'kid': CHILDREN,
     'youngster': CHILDREN,
-    'children': CHILDREN
+    'children': CHILDREN,
+    'offspring': CHILDREN,
 }
 
-# print('Loading model...')
-# model = KeyedVectors.load_word2vec_format('./crawl-300d-2M.vec')
-# print('Model loaded.')
+print('Loading model...')
+model = KeyedVectors.load_word2vec_format('./wiki.simple.vec')
+print('Model loaded.')
 
 
 def clean_text(text):
@@ -71,17 +75,19 @@ def extract_reasons():
         word_stemmed = [str(wordnet_lemmatizer.lemmatize(w)) for w in word_tokens]
 
         reason = None
-        reasonslist = []
+        reasonslist = set([])
 
         for w in word_stemmed:
             for r in REASONS:
-                if model.similarity(w, r) > 0.35:
-                    reasonslist.append(REASONS[r])
-                    reason = True
+                try:
+                    if model.similarity(w, r) > 0.35:
+                        reasonslist.add(REASONS[r])
+                        reason = True
+                except Exception as e:
+                    continue
 
-                    # print('Reason', reasonslist[r])
         if reason:
-            return jsonify({"status": str(1), "reasons": reasonslist})
+            return jsonify({"status": str(1), "reasons": list(reasonslist)})
         else:
             return jsonify({"status": str(-1)})
 
@@ -176,9 +182,7 @@ def get_document():
 
 @app.route('/document/<int:document_id>.pdf', methods=['GET'])
 def document(document_id):
-    print('ehrhehrehrhe')
     document_id = str(document_id)
-    print()
     return send_from_directory('./documents', document_id + '.pdf', )
 
 
