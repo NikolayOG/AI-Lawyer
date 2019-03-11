@@ -2,3 +2,5 @@
 __pycache__/
 crawl-300d-2M.vec
 venv/*
+wiki.simple.vec
+documents/*

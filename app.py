@@ -17,36 +17,36 @@ app = Flask(__name__, static_url_path='/documents')
 spacy_nlp = spacy.load('en')
 
 # topics
-DISABILITY = 'DISABILITY'
-ILLNESS = 'ILLNESS'
-DEATH = 'DEATH'
-CHILDREN = 'CHILDREN'
+# DISABILITY = 'DISABILITY'
+# ILLNESS = 'ILLNESS'
+# DEATH = 'DEATH'
+# CHILDREN = 'CHILDREN'
 
 # seed words for the word2vec model
-REASONS = {
-    'disability': DISABILITY,
-    'deaf': DISABILITY,
-    'disabled': DISABILITY,
-    'illness': ILLNESS,
-    'stroke': ILLNESS,
-    'heart': ILLNESS,
-    'disease': ILLNESS,
-    'ill': ILLNESS,
-    'depression': ILLNESS,
-    'depress': ILLNESS,
-    'injury': ILLNESS,
-    'die': DEATH,
-    'death' : DEATH,
-    'deceased' : DEATH,
-    'kid': CHILDREN,
-    'youngster': CHILDREN,
-    'children': CHILDREN,
-    'offspring': CHILDREN,
-}
+# REASONS = {
+#     'disability': DISABILITY,
+#     'deaf': DISABILITY,
+#     'disabled': DISABILITY,
+#     'illness': ILLNESS,
+#     'stroke': ILLNESS,
+#     'heart': ILLNESS,
+#     'disease': ILLNESS,
+#     'ill': ILLNESS,
+#     'depression': ILLNESS,
+#     'depress': ILLNESS,
+#     'injury': ILLNESS,
+#     'die': DEATH,
+#     'death' : DEATH,
+#     'deceased' : DEATH,
+#     'kid': CHILDREN,
+#     'youngster': CHILDREN,
+#     'children': CHILDREN,
+#     'offspring': CHILDREN,
+# }
 
-print('Loading model...')
-model = KeyedVectors.load_word2vec_format('./wiki.simple.vec')
-print('Model loaded.')
+# print('Loading model...')
+# model = KeyedVectors.load_word2vec_format('./wiki.simple.vec')
+# print('Model loaded.')
 
 
 def clean_text(text):
@@ -62,37 +62,37 @@ def clean_text(text):
     return fix_text
 
 
-@app.route('/reasons', methods=['POST'])
-def extract_reasons():
-    global model
-
-    try:
-        content = request.json
-        text_reasons = content['text_reasons']
-
-        word_tokens = word_tokenize(clean_text(text_reasons))
-
-        word_stemmed = [str(wordnet_lemmatizer.lemmatize(w)) for w in word_tokens]
-
-        reason = None
-        reasonslist = set([])
-
-        for w in word_stemmed:
-            for r in REASONS:
-                try:
-                    if model.similarity(w, r) > 0.35:
-                        reasonslist.add(REASONS[r])
-                        reason = True
-                except Exception as e:
-                    continue
-
-        if reason:
-            return jsonify({"status": str(1), "reasons": list(reasonslist)})
-        else:
-            return jsonify({"status": str(-1)})
-
-    except Exception as e:
-        return e
+# @app.route('/reasons', methods=['POST'])
+# def extract_reasons():
+#     global model
+#
+#     try:
+#         content = request.json
+#         text_reasons = content['text_reasons']
+#
+#         word_tokens = word_tokenize(clean_text(text_reasons))
+#
+#         word_stemmed = [str(wordnet_lemmatizer.lemmatize(w)) for w in word_tokens]
+#
+#         reason = None
+#         reasonslist = set([])
+#
+#         for w in word_stemmed:
+#             for r in REASONS:
+#                 try:
+#                     if model.similarity(w, r) > 0.35:
+#                         reasonslist.add(REASONS[r])
+#                         reason = True
+#                 except Exception as e:
+#                     continue
+#
+#         if reason:
+#             return jsonify({"status": str(1), "reasons": list(reasonslist)})
+#         else:
+#             return jsonify({"status": str(-1)})
+#
+#     except Exception as e:
+#         return e
 
 
 @app.route('/date', methods=['POST'])
@@ -176,6 +176,20 @@ def get_document():
 
         return '/document/' + str(fill_in_values['claimNo5']) + '.pdf'
 
+    except Exception as e:
+        return e
+
+
+@app.route('/notice', methods=['POST'])
+def extract_details_from_notice():
+    try:
+        return jsonify({
+            "status": str(1),
+            "name": "Deborah Smith",
+            "address": "11A Upper W. Grove, M13 0BB, Manchester, England",
+            "date_issued": '10/03/2019'
+
+        })
     except Exception as e:
         return e
 
