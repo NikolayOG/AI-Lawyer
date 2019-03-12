@@ -1,6 +1,6 @@
 from flask import jsonify
 from flask import Flask, request, send_from_directory, send_file
-import spacy
+import en_core_web_sm
 from dateparser import parse
 from nltk import word_tokenize, ngrams
 import nltk
@@ -14,7 +14,8 @@ wordnet_lemmatizer = WordNetLemmatizer()
 
 
 app = Flask(__name__, static_url_path='/documents')
-spacy_nlp = spacy.load('en')
+
+nlp = en_core_web_sm.load()
 
 # topics
 # DISABILITY = 'DISABILITY'
