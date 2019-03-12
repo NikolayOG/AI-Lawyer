@@ -1,3 +1,4 @@
+numpy==1.14.5
 spacy>=2.0.0,<3.0.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.0.0/en_core_web_sm-2.0.0.tar.gz#en_core_web_sm
 gunicorn==19.9.0
@@ -27,7 +28,6 @@ msgpack-numpy==0.4.3.2
 murmurhash==1.0.2
 nameparser==1.0.2
 nltk==3.4
-numpy==1.16.1
 pdfrw==0.4
 plac==0.9.6
 preshed==2.0.1
