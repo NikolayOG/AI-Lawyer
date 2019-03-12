@@ -2,20 +2,20 @@ from flask import jsonify
 from flask import Flask, request, send_from_directory, send_file
 import en_core_web_sm
 from dateparser import parse
-from nltk import word_tokenize, ngrams
-import nltk
+# from nltk import word_tokenize, ngrams
+import en_core_web_sm
 import string
-from nltk.stem import WordNetLemmatizer
-from gensim.models import KeyedVectors
+# from nltk.stem import WordNetLemmatizer
+# from gensim.models import KeyedVectors
 import random
 import pdfrw
 from nameparser import HumanName
-wordnet_lemmatizer = WordNetLemmatizer()
+# wordnet_lemmatizer = WordNetLemmatizer()
 
+spacy_nlp = en_core_web_sm.load()
 
 app = Flask(__name__, static_url_path='/documents')
-
-nlp = en_core_web_sm.load()
+# spacy_nlp = spacy.load('en')
 
 # topics
 # DISABILITY = 'DISABILITY'
